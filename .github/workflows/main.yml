@@ -1,0 +1,40 @@
+name: المزامنة اليومية التلقائية لتقارير ماونتن برجر
+
+on:
+  schedule:
+    # يشتغل تلقائياً كل يوم الساعة 9 مساءً بتوقيت غرينتش (الواحدة صباحاً بتوقيت الإمارات)
+    - cron: '0 21 * * *'
+  workflow_dispatch: # يتيح لك تشغيل التحديث يدوياً بزر واحد عند الحاجة
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: سحب كود المستودع الحالي
+      uses: actions/checkout@v3
+
+    - name: إعداد بيئة لغة بايثون
+      uses: actions/setup-python@v4
+      with:
+        python-node: '3.10'
+
+    - name: تثبيت المكتبات البرمجية المطلوبة
+      run: |
+        pip install requests pandas
+
+    - name: تشغيل سكربت جلب وتحديث البيانات الحية
+      env:
+        LOYVERSE_TOKEN: ${{ secrets.LOYVERSE_TOKEN }} # استدعاء الرمز السري بأمان
+      run: |
+        python sync_loyverse.py
+
+    - name: حفظ وتحديث ملف التقرير الجديد في جيت هاب
+      run: |
+        git config --global user.name 'Mountain Burger Robot'
+        git config --global user.email 'robot@mountainburger.local'
+        git add index.html
+        git commit -m "تحديث تلقائي للمبيعات والتقارير اليومية" || exit 0
+        git push
+
+ 
